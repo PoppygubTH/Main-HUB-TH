@@ -7,6 +7,41 @@ local run = game:GetService("RunService")
 
 local Utility = {}
 local Objects = {}
+function Kavo:DraggingEnabled(frame, parent)
+        
+    parent = parent or frame
+    
+    -- stolen from wally or kiriot, kek
+    local dragging = false
+    local dragInput, mousePos, framePos
+
+    frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            mousePos = input.Position
+            framePos = parent.Position
+            
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    frame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
+
+    input.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - mousePos
+            parent.Position  = UDim2.new(framePos.X.Scale, framePos.X.Offset + delta.X, framePos.Y.Scale, framePos.Y.Offset + delta.Y)
+        end
+    end)
+end
 
 function Utility:TweenObject(obj, properties, duration, ...)
     tween:Create(obj, tweeninfo(duration, ...), properties):Play()
@@ -18,7 +53,7 @@ local themes = {
     Background = Color3.fromRGB(36, 37, 43),
     Header = Color3.fromRGB(28, 29, 34),
     TextColor = Color3.fromRGB(255,255,255),
-    ElementColor = Color3.fromRGB(45, 45, 49)
+    ElementColor = Color3.fromRGB(32, 32, 38)
 }
 local themeStyles = {
     DarkTheme = {
@@ -55,6 +90,13 @@ local themeStyles = {
         Header = Color3.fromRGB(38, 45, 71),
         TextColor = Color3.fromRGB(200, 200, 200),
         ElementColor = Color3.fromRGB(38, 45, 71)
+    },
+    Midnight = {
+        SchemeColor = Color3.fromRGB(26, 189, 158),
+        Background = Color3.fromRGB(44, 62, 82),
+        Header = Color3.fromRGB(57, 81, 105),
+        TextColor = Color3.fromRGB(255, 255, 255),
+        ElementColor = Color3.fromRGB(52, 74, 95)
     },
     Sentinel = {
         SchemeColor = Color3.fromRGB(230, 35, 69),
@@ -127,8 +169,6 @@ function Kavo.CreateLib(kavName, themeList)
         themeList = themeStyles.Synapse
     elseif themeList == "Serpent" then
         themeList = themeStyles.Serpent
-    elseif themeList == "NicksFav" then
-    	themelist = themeStyles.NicksFav
     else
         if themeList.SchemeColor == nil then
             themeList.SchemeColor = Color3.fromRGB(74, 99, 135)
@@ -168,9 +208,10 @@ function Kavo.CreateLib(kavName, themeList)
     local pages = Instance.new("Frame")
     local Pages = Instance.new("Folder")
     local infoContainer = Instance.new("Frame")
-    local ReButton = Instance.new("TextButton")
 
     local blurFrame = Instance.new("Frame")
+
+    Kavo:DraggingEnabled(MainHeader, Main)
 
     blurFrame.Name = "blurFrame"
     blurFrame.Parent = pages
@@ -192,66 +233,8 @@ function Kavo.CreateLib(kavName, themeList)
     Main.ClipsDescendants = true
     Main.Position = UDim2.new(0.336503863, 0, 0.275485456, 0)
     Main.Size = UDim2.new(0, 525, 0, 318)
-    Main.Visible = true
-    
-	ReButton.Name = "ReButton"
-	ReButton.Parent = ScreenGui
-	ReButton.BackgroundColor3 = Color3.new(0.156863, 0.156863, 0.156863)
-	ReButton.BorderColor3 = Color3.new(0, 0, 0)
-	ReButton.BorderSizePixel = 0
-	ReButton.Position = UDim2.new(0.943, 0, 0.417, 0)
-	ReButton.Size = UDim2.new(0, 54, 0, 54)
-	ReButton.Visible = false
-	ReButton.Font = Enum.Font.SourceSansBold
-	ReButton.Text = "Minimize UI"
-	ReButton.TextColor3 = Color3.new(1, 1, 1)
-	ReButton.TextScaled = true
-	ReButton.TextSize = 14
-	ReButton.TextWrapped = true
-	ReButton.MouseButton1Click:Connect(function()
-		if Main.Visible == true then
-			Main.Visible = false
-			ReButton.Text = "Reopen"
-		elseif Main.Visible == false then
-			Main.Visible = true
-			ReButton.Text = "Minimize UI"
-	end
-end)
-
-local UserInputService = game:GetService("UserInputService")
-
-local dragging
-local dragInput
-local dragStart
-local startPos
-
-Main.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.Touch then
-		dragging = true
-		dragStart = input.Position
-		startPos = Main.Position
-
-		input.Changed:Connect(function()
-			if input.UserInputState == Enum.UserInputState.End then
-				dragging = false
-			end
-		end)
-	end
-end)
-
-Main.InputChanged:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.Touch then
-		dragInput = input
-	end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-	if input == dragInput and dragging then
-		local delta = input.Position - dragStart
-		Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-	end
-end)
-
+    Main.Active = true
+    Main.Draggable = true
 
     MainCorner.CornerRadius = UDim.new(0, 4)
     MainCorner.Name = "MainCorner"
@@ -265,7 +248,7 @@ end)
     headerCover.CornerRadius = UDim.new(0, 4)
     headerCover.Name = "headerCover"
     headerCover.Parent = MainHeader
-    
+
     coverup.Name = "coverup"
     coverup.Parent = MainHeader
     coverup.BackgroundColor3 = themeList.Header
@@ -595,7 +578,7 @@ end)
             function Elements:NewButton(bname,tipINf, callback)
                 showLogo = showLogo or true
                 local ButtonFunction = {}
-                tipINf = tipINf or "No TIP Entered"
+                tipINf = tipINf or "Tip: Clicking this nothing will happen!"
                 bname = bname or "Click Me!"
                 callback = callback or function() end
 
